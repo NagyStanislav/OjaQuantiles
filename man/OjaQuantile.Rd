@@ -10,7 +10,8 @@ OjaQuantile(
   alpha,
   method = "SGD",
   averaging = "all",
-  B = 1e+05,
+  B = 10000,
+  whiten = "cov",
   batch = NULL,
   gamma = NULL,
   x0 = NULL,
@@ -50,7 +51,16 @@ weighted average of only the last \code{B/4} updates is considered, or
 without any averaging.}
 
 \item{B}{Number of iterations of the stochastic gradient descent method. A 
-positive integer. By default taken to be \code{B=1e5}.}
+positive integer. By default taken to be \code{B=1e4}.}
+
+\item{whiten}{The pre-whitening method of the dataset to achieve better
+numerical stability. Possible values are \code{"none"}, \code{"cov"}, 
+\code{"var"}, or \code{"Tyler"}. Default is \code{"cov"}, which means that
+whitening is performed using the sample
+covariance matrix. This is the same as calling \code{whiten="var"}. With
+\code{whiten=="none"} no pre-whitening is performed. For \code{"Tyler"},
+the data matrix is whitened using the robust Tyler's scatter 
+estimator, with a center at the spatial median.}
 
 \item{batch}{Size of mini-batches for the stochastic gradient descent 
 algorithm. In each iteration of the algorithm, \code{batch} of 

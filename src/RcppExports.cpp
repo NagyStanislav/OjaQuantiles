@@ -50,8 +50,30 @@ BEGIN_RCPP
 END_RCPP
 }
 // OjaSGD
-Rcpp::List OjaSGD(arma::mat X, arma::mat u, arma::vec alpha, int B, int batch, double gamma0, arma::mat x0, int n, int d, int nq, bool trck);
-RcppExport SEXP _OjaQuantiles_OjaSGD(SEXP XSEXP, SEXP uSEXP, SEXP alphaSEXP, SEXP BSEXP, SEXP batchSEXP, SEXP gamma0SEXP, SEXP x0SEXP, SEXP nSEXP, SEXP dSEXP, SEXP nqSEXP, SEXP trckSEXP) {
+Rcpp::List OjaSGD(arma::mat X, arma::mat u, arma::vec alpha, int B, int batch, double gamma0, arma::vec gammas, arma::mat x0, int n, int d, int nq, bool trck);
+RcppExport SEXP _OjaQuantiles_OjaSGD(SEXP XSEXP, SEXP uSEXP, SEXP alphaSEXP, SEXP BSEXP, SEXP batchSEXP, SEXP gamma0SEXP, SEXP gammasSEXP, SEXP x0SEXP, SEXP nSEXP, SEXP dSEXP, SEXP nqSEXP, SEXP trckSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type u(uSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< int >::type B(BSEXP);
+    Rcpp::traits::input_parameter< int >::type batch(batchSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma0(gamma0SEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type gammas(gammasSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type x0(x0SEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type d(dSEXP);
+    Rcpp::traits::input_parameter< int >::type nq(nqSEXP);
+    Rcpp::traits::input_parameter< bool >::type trck(trckSEXP);
+    rcpp_result_gen = Rcpp::wrap(OjaSGD(X, u, alpha, B, batch, gamma0, gammas, x0, n, d, nq, trck));
+    return rcpp_result_gen;
+END_RCPP
+}
+// OjaSGD2
+Rcpp::List OjaSGD2(arma::mat X, arma::mat u, arma::vec alpha, int B, int batch, double gamma0, arma::mat x0, int n, int d, int nq, bool trck);
+RcppExport SEXP _OjaQuantiles_OjaSGD2(SEXP XSEXP, SEXP uSEXP, SEXP alphaSEXP, SEXP BSEXP, SEXP batchSEXP, SEXP gamma0SEXP, SEXP x0SEXP, SEXP nSEXP, SEXP dSEXP, SEXP nqSEXP, SEXP trckSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -66,7 +88,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type d(dSEXP);
     Rcpp::traits::input_parameter< int >::type nq(nqSEXP);
     Rcpp::traits::input_parameter< bool >::type trck(trckSEXP);
-    rcpp_result_gen = Rcpp::wrap(OjaSGD(X, u, alpha, B, batch, gamma0, x0, n, d, nq, trck));
+    rcpp_result_gen = Rcpp::wrap(OjaSGD2(X, u, alpha, B, batch, gamma0, x0, n, d, nq, trck));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -103,14 +125,33 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// objfSpatialC
+arma::vec objfSpatialC(arma::mat mu, arma::mat X, arma::vec u, double alpha, int n, int d, int nmu);
+RcppExport SEXP _OjaQuantiles_objfSpatialC(SEXP muSEXP, SEXP XSEXP, SEXP uSEXP, SEXP alphaSEXP, SEXP nSEXP, SEXP dSEXP, SEXP nmuSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type u(uSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type d(dSEXP);
+    Rcpp::traits::input_parameter< int >::type nmu(nmuSEXP);
+    rcpp_result_gen = Rcpp::wrap(objfSpatialC(mu, X, u, alpha, n, d, nmu));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_OjaQuantiles_signC", (DL_FUNC) &_OjaQuantiles_signC, 1},
     {"_OjaQuantiles_cvectorC", (DL_FUNC) &_OjaQuantiles_cvectorC, 2},
     {"_OjaQuantiles_grdC", (DL_FUNC) &_OjaQuantiles_grdC, 5},
-    {"_OjaQuantiles_OjaSGD", (DL_FUNC) &_OjaQuantiles_OjaSGD, 11},
+    {"_OjaQuantiles_OjaSGD", (DL_FUNC) &_OjaQuantiles_OjaSGD, 12},
+    {"_OjaQuantiles_OjaSGD2", (DL_FUNC) &_OjaQuantiles_OjaSGD2, 11},
     {"_OjaQuantiles_objfC", (DL_FUNC) &_OjaQuantiles_objfC, 7},
     {"_OjaQuantiles_gfunC", (DL_FUNC) &_OjaQuantiles_gfunC, 6},
+    {"_OjaQuantiles_objfSpatialC", (DL_FUNC) &_OjaQuantiles_objfSpatialC, 7},
     {NULL, NULL, 0}
 };
 

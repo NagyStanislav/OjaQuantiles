@@ -36,7 +36,17 @@
 #' without any averaging.
 #'  
 #' @param B Number of iterations of the stochastic gradient descent method. A 
-#' positive integer. By default taken to be \code{B=1e5}.
+#' positive integer. By default taken to be \code{B=1e4}.
+#' 
+#' @param whiten The pre-whitening method of the dataset to achieve better
+#' numerical stability. Possible values are \code{"none"}, \code{"cov"}, 
+#' \code{"var"}, or \code{"Tyler"}. Default is \code{"cov"}, which means that
+#' whitening is performed using the sample
+#' covariance matrix. This is the same as calling \code{whiten="var"}. With
+#' \code{whiten=="none"} no pre-whitening is performed. For \code{"Tyler"},
+#' the data matrix is whitened using the robust Tyler's scatter 
+#' estimator, with a center at the spatial median. 
+#' 
 #' @param batch Size of mini-batches for the stochastic gradient descent 
 #' algorithm. In each iteration of the algorithm, \code{batch} of 
 #' randomly selected \code{d}-tuples of points from \code{X} are taken, and 
@@ -45,13 +55,16 @@
 #' of \code{f}. By default set to \code{NULL}, in which case 
 #' \code{batch} is taken as \code{max(1,round(min(100,sqrt(n))))}, where 
 #' \code{n} is the sample size.
+#' 
 #' @param gamma The initial step value for the stochastic gradient descent. By 
 #' default set to \code{NULL}, which means that \code{gamma} is evaluated as
 #' \code{1/4} of the maximum range of the dataset \code{X} among its \code{d}
 #' coordinates.
+#' 
 #' @param x0 The initial value for the iterative procedure. By default set to 
 #' \code{NULL}, meaning that \code{x0} is taken to be the sample mean of 
 #' \code{X}.
+#' 
 #' @param trck Indicator of whether as an output of the procedure, also the
 #' whole history of \code{B} iterated solutions should be given. 
 #' By default set to \code{FALSE}.
@@ -125,7 +138,9 @@
 OjaQuantile = function(X, u, alpha, 
                        method="SGD",
                        averaging="all",
-                       B=1e5, batch=NULL, 
+                       B=1e4, 
+                       whiten="cov",
+                       batch=NULL, 
                        gamma=NULL, x0=NULL,
                        trck=FALSE){
   
@@ -133,14 +148,35 @@ OjaQuantile = function(X, u, alpha,
   d = ncol(X)
   method = match.arg(method,c("SGD","optim"))
   averaging = match.arg(averaging,c("all","suffix","none"))
-  if(averaging!="none") trck=TRUE
+  whiten = match.arg(whiten,c("Tyler","var","cov","none"))
   if(is.matrix(u)) u = t(u)
-  if(!is.matrix(u)) u = matrix(u,ncol=1)
+  if((!is.matrix(u))&(d==1)) u = matrix(u,nrow=1)
+  if((!is.matrix(u))&(d>1))  u = matrix(u,ncol=1)
   nqs = ncol(u)
+  if(nrow(u)!=d) stop("The dimensions of X and u do not match.")
   if(length(alpha)==1) alpha = rep(alpha,nqs)
   if(length(alpha)!=nqs) stop("The number of rows in u and the length of alpha must equal.")
   
+  # whitening transform
+  if(d==1){
+    whiten="none" # no whitening is needed
+  }
+  if(whiten=="Tyler"){
+    S = ICSNP::tyler.shape(X, location=ICSNP::spatial.median(X))
+  }
+  if((whiten=="var")|(whiten=="cov")){
+    S = var(X)
+  }
+  if(whiten=="none") S = diag(d)
+  #
+  eS = eigen(S)
+  Shi = eS$vectors%*%diag(eS$values^{-1/2})%*%t(eS$vectors)
+  Sh = eS$vectors%*%diag(eS$values^{+1/2})%*%t(eS$vectors)
+  X0 = X       # store the original (un-whitenened) X in X0
+  X = X0%*%Shi # whitened X
+  
   if(method=="SGD"){
+    # initialize parameters gamma and x0
     if(is.null(gamma)){
       gamma0 = apply(X,2,range)
       gamma = max(gamma0[2,]-gamma0[1,])/4
@@ -149,56 +185,36 @@ OjaQuantile = function(X, u, alpha,
     if(is.null(batch)) batch = max(1,round(min(100,sqrt(n))))
     x0 = matrix(x0,nrow=d,ncol=nqs)
     
+    # set up gamma schemes for final weighting
+    if(averaging=="all") gammas = gamma/sqrt(1:B)
+    if(averaging=="suffix"){
+      gammas = gamma/sqrt(1:B)
+      gammas[-(floor(3*B/4):B)] = 0
+    }
+    if(averaging=="none"){
+      gammas = rep(0,B)
+      gammas[B] = 1
+    }
+    
     if(!trck){
       res = OjaSGD(t(X), u, alpha, B, batch, 
-                   gamma, x0, nrow(X), ncol(X), nqs, trck)
-      return(list(q = t(res$x0), 
-                  qtrck = array(t(res$x0),dim = c(nqs,ncol(X),1)),
-                  gamma = gamma
-                  ))
+                   gamma, gammas, 
+                   x0, nrow(X), ncol(X), nqs, trck)
+      q = t(res$q)%*%Sh
+      return(list(q = q, 
+                  qtrck = array(q,dim = c(nqs,ncol(X),1))
+      ))
     }
     if(trck){
       res = OjaSGD(t(X), u, alpha, B, batch, 
-                   gamma, x0, nrow(X), ncol(X), nqs, trck)
-      if(averaging=="none") q = t(res$x0)
-      if(averaging=="all"){
-        q = matrix(NA,nrow=nqs,ncol=ncol(X))
-        qtrck = aperm(res$x0trck,c(2,1,3))
-        gammas = gamma/sqrt(1:B)
-          for(i in 1:(dim(qtrck)[1])){
-            if(d>1){
-              Q2 = t(qtrck[i,,])
-              q[i,] = colSums(Q2*gammas)/sum(gammas)
-            }
-            if(d==1){
-              Q2 = qtrck[i,,]
-              q[i,] = sum(Q2*gammas)/sum(gammas)  
-            }
-          }
-      }
-      if(averaging=="suffix"){
-        q = matrix(NA,nrow=nqs,ncol=ncol(X))
-        qtrck = aperm(res$x0trck,c(2,1,3))
-        gammas = gamma/sqrt(1:B)
-        for(i in 1:(dim(qtrck)[1])){
-          if(d>1){
-            Q2 = t(qtrck[i,,])
-            q[i,] = colSums(Q2[floor(3*B/4):B,]*
-                            gammas[floor(3*B/4):B])/
-            sum(gammas[floor(3*B/4):B])
-          }
-          if(d==1){
-            Q2 = qtrck[i,,]
-            q[i,] = sum(Q2[floor(3*B/4):B]*
-                              gammas[floor(3*B/4):B])/
-              sum(gammas[floor(3*B/4):B])            
-          }
-        }        
-      }
+                   gamma, gammas, 
+                   x0, nrow(X), ncol(X), nqs, trck)
+      q = t(res$q)%*%Sh
+      qtrck = aperm(res$x0trck,c(2,1,3))
+      qtrck = apply(qtrck, 3, function(x) x%*%Sh)
+      dim(qtrck) = c(nqs,d,B)
       return(list(q = q, 
-                  qtrck = aperm(res$x0trck,c(2,1,3)),
-                  gamma = gamma
-                  ))
+                  qtrck = qtrck))
     }
   }
   if(method=="optim"){
@@ -212,11 +228,81 @@ OjaQuantile = function(X, u, alpha,
           optim(c(colMeans(X)), function(x) objf(x,X,u[,i],alpha[i]), 
                 method="Brent", lower = min(X)-1/2, upper=max(X)+1/2)$par
     }
-    return(list(q = res, qtrck = array(res, dim = c(nqs,ncol(X),1))))
+    return(list(q = res%*%Sh, 
+                qtrck = array(res%*%Sh, dim = c(nqs,ncol(X),1))))
   }
 }
 
-#### Objective function ----
+#### spatialQuantile ----
+#' Spatial Quantile
+#'
+#' Iterative computation of the spatial quantiles for multivariate data: 
+#' an exact optimization algorithm using function \link[stats]{optim}.
+#' 
+#' @param X A numerical matrix with the dataset of dimension 
+#' \code{n}-times-\code{d}, where \code{n} is the size of the dataset and 
+#' \code{d} is its dimension.
+#' @param u A single unit vector of dimension \code{d}, or a numerical matrix
+#' of dimension \code{nq}-times-\code{d} of \code{nq} unit vectors in dimension 
+#' \code{d}. Each row of the matrix corresponds to one unit direction in which
+#' the spatial quantile should be calclulated.
+#' @param alpha Magnitudes \code{alpha} of the spatial quantiles to be 
+#' calculated. A single value in the interval \code{[0,1]} if \code{u} is a 
+#' single vector, or a numerical vector of values inside \code{[0,1]} of length
+#' \code{nq} if \code{u} is a matrix with \code{nq} rows. The \code{i}-th 
+#' element of \code{alpha} corresponds to the \code{i}-th row of \code{u}.
+#'
+#' @return A matrix of the approximate spatial quantiles of size 
+#' \code{nq}-times-\code{d}, one row per one row of \code{u} and an element of 
+#' \code{alpha}. 
+#'
+#' @examples
+#' n = 100
+#' d = 2
+#' X = matrix(rnorm(n*d),ncol=d)
+#' 
+#' alpha = 0.7
+#' u = -c(1,rep(0,d-1))
+#' 
+#' res = spatialQuantile(X, u, alpha)
+#' 
+#' plot(X,pch=16,ann=FALSE)
+#' points(res[,1],res[,2],col="orange",pch=16,cex=2)
+#' 
+#' # Multiple quantiles
+#' nq = 10
+#' alpha = rep(0.7,nq)
+#' theta = seq(-pi,pi,length=nq)
+#' u = cbind(cos(theta),sin(theta))
+#' 
+#' res = spatialQuantile(X, u, alpha)
+#' 
+#' plot(X,pch=16,ann=FALSE)
+#' points(res[,1],res[,2],col="orange",pch=16,cex=2)
+
+spatialQuantile = function(X, u, alpha){
+  
+  n = nrow(X)
+  d = ncol(X)
+  if(is.matrix(u)) u = t(u)
+  if(!is.matrix(u)) u = matrix(u,ncol=1)
+  nqs = ncol(u)
+  if(length(alpha)==1) alpha = rep(alpha,nqs)
+  if(length(alpha)!=nqs) stop("The number of rows in u and the length of alpha must equal.")
+
+  d = ncol(X)
+  res = matrix(nrow=nqs, ncol=d)
+  for(i in 1:nqs){
+    if(d>1) res[i,] = 
+        optim(c(colMeans(X)), function(x) objfSpatial(x,X,u[,i],alpha[i]))$par
+    if(d==1) res[i,] = 
+        optim(c(colMeans(X)), function(x) objfSpatial(x,X,u[,i],alpha[i]), 
+              method="Brent", lower = min(X)-1/2, upper=max(X)+1/2)$par
+  }
+  return(res)
+}
+
+#### Objective function for Quantiles ----
 #' Objective Function for the Oja Quantiles
 #'
 #' The complete objective function to be minimized for computing the Oja 
@@ -275,7 +361,60 @@ objf = function(mu, X, u, alpha){
            choose(n,d))
 }
 
-objf_rank = function(mu, X, eval){
+#### Objective function for Ranks ----
+#' Objective Function for the Oja Rank/Sign/Depth/Outlyingness
+#'
+#' The complete objective function to be minimized for computing the Oja 
+#' ranks/depht/outlyingness for multivariate data. 
+#'
+#' @param mu Argument at which the objective function is to be evaluated. 
+#' A numerical vector of dimension \code{d}.
+#' @param X A numerical matrix with the dataset of dimension 
+#' \code{n}-times-\code{d}, where \code{n} is the size of the dataset and 
+#' \code{d} is its dimension.
+#' @param eval Number of points in the unit sphere in the \code{d}-space
+#' where the objective function is evaluated. By default set to \code{1001}.
+#'
+#' @note Since this is an exact evaluation of the objective function, running
+#' this function with higher \code{d} (that is, \code{d>2}) or \code{n} 
+#' (\code{n>500}) can be extremely slow.
+#'
+#' @return A list with the following components:
+#' \itemize{
+#' \item \code{V}: A numerical matrix of dimensions \code{eval}-times-\code{d}
+#' of values where the objective function is evaluated. If \code{d==2}, these
+#' values are taken equi-distant in the unit circle. If \code{d>2}, the points 
+#' are sampled randomly and uniformly on the unit sphere.
+#' \item \code{vals}: A numerical vector of length \code{eval} that contains the
+#' exact values of the objective function, one entry per a row of \code{V}.
+#' \item \code{numerator}: The exact \code{d}-vector whose inner product with
+#' \code{v} gives the numerator of the objective function at \code{v}.
+#' } 
+#'
+#' @examples
+#' n = 100
+#' d = 2
+#' X = matrix(rnorm(n*d),ncol=d)
+#' 
+#' alpha = .7
+#' u = c(1,rep(0,d-1))
+#' 
+#' # sample Oja quantile of order alpha in direction u
+#' resSGD = OjaQuantile(X, u, alpha) 
+#' 
+#' # evaluate the objective function for Oja ranks
+#' g = objfRank(resSGD$q, X, eval=1001)
+#'
+#' # numerically computed Oja sign
+#' (Osign = g$domain[which.max(g$vals),]) 
+#' # numerically computed Oja outlyingness and depth 
+#' (Ooutl = max(g$vals))
+#' 1 - max(g$vals)
+#' 
+#' # numerically computed Oja rank
+#' Ooutl*Osign
+
+objfRank = function(mu, X, eval=1001){
   n = nrow(X)
   d = ncol(X)
   if(is.matrix(mu)) mu = t(mu)
@@ -301,4 +440,57 @@ objf_rank = function(mu, X, eval){
   dn = dn/ln
   of = V%*%nm/dn
   return(list(domain = V, vals = of, numerator = nm))
+}
+
+#### Objective function for spatial quantiles ----
+#' Objective Function for the spatial quantiles
+#'
+#' The complete objective function to be minimized for computing the spatial
+#' quantiles for multivariate data. 
+#'
+#' @param mu Arguments at which the objective function is to be evaluated. 
+#' A numerical vector of dimension \code{d}, or a matrix of dimension 
+#' \code{m}-times-\code{d}, each row per one argument of the objective function.
+#' @param X A numerical matrix with the dataset of dimension 
+#' \code{n}-times-\code{d}, where \code{n} is the size of the dataset and 
+#' \code{d} is its dimension.
+#' @param u A single unit vector of dimension \code{d}. Corresponds to the unit 
+#' direction in which the spatial quantile should be calclulated.
+#' @param alpha The magnitude \code{alpha} of the spatial quantile to be 
+#' calculated. A single value in the interval \code{[0,1]}.
+#'
+#' @return A numerical vector of length \code{m} of the values of the objective
+#' function. Each value corresponds to one row of \code{mu}.
+#'
+#' @examples
+#' n = 100
+#' d = 2
+#' X = matrix(rnorm(n*d),ncol=d)
+#' 
+#' alpha = 0.7
+#' u = -c(1,rep(0,d-1))
+#' 
+#' res = spatialQuantile(X, u, alpha)
+#' objfSpatial(res, X, u, alpha)
+#' 
+#' neval = 101
+#' xgr = seq(min(X[,1])-0.5,max(X[,1])+0.5,length=neval)
+#' ygr = seq(min(X[,2])-0.5,max(X[,2])+0.5,length=neval)
+#' mu = as.matrix(expand.grid(xgr,ygr))
+#' objmat = matrix(objfSpatial(mu,X,u,alpha),ncol=neval)
+#' 
+#' contour(xgr,ygr,objmat,ann=FALSE)
+#' points(X,pch=16)
+#' points(res[,1],res[,2],col="orange",pch=16,cex=2)
+
+objfSpatial = function(mu, X, u, alpha){
+  n = nrow(X)
+  d = ncol(X)
+  if(is.matrix(mu)) mu = t(mu)
+  if(!is.matrix(mu)){
+    if(length(mu)==d) mu = matrix(mu,ncol=1)
+    if(d==1) mu = matrix(mu,nrow=1)
+  }
+  if(nrow(mu)!=d) stop("Dimensions of mu and X do not coincide.")
+  return(objfSpatialC(mu, t(X), u, alpha, n, d, ncol(mu))/n)
 }
