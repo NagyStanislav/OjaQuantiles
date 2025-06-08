@@ -71,24 +71,24 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// OjaSGD2
-Rcpp::List OjaSGD2(arma::mat X, arma::mat u, arma::vec alpha, int B, int batch, double gamma0, arma::mat x0, int n, int d, int nq, bool trck);
-RcppExport SEXP _OjaQuantiles_OjaSGD2(SEXP XSEXP, SEXP uSEXP, SEXP alphaSEXP, SEXP BSEXP, SEXP batchSEXP, SEXP gamma0SEXP, SEXP x0SEXP, SEXP nSEXP, SEXP dSEXP, SEXP nqSEXP, SEXP trckSEXP) {
+// OjaRankSGD
+Rcpp::List OjaRankSGD(arma::mat mu, arma::mat X, int B, int batch, double gamma0, arma::vec gammas, arma::mat v0, int n, int d, int nq, bool trck);
+RcppExport SEXP _OjaQuantiles_OjaRankSGD(SEXP muSEXP, SEXP XSEXP, SEXP BSEXP, SEXP batchSEXP, SEXP gamma0SEXP, SEXP gammasSEXP, SEXP v0SEXP, SEXP nSEXP, SEXP dSEXP, SEXP nqSEXP, SEXP trckSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type mu(muSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type u(uSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< int >::type B(BSEXP);
     Rcpp::traits::input_parameter< int >::type batch(batchSEXP);
     Rcpp::traits::input_parameter< double >::type gamma0(gamma0SEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type x0(x0SEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type gammas(gammasSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type v0(v0SEXP);
     Rcpp::traits::input_parameter< int >::type n(nSEXP);
     Rcpp::traits::input_parameter< int >::type d(dSEXP);
     Rcpp::traits::input_parameter< int >::type nq(nqSEXP);
     Rcpp::traits::input_parameter< bool >::type trck(trckSEXP);
-    rcpp_result_gen = Rcpp::wrap(OjaSGD2(X, u, alpha, B, batch, gamma0, x0, n, d, nq, trck));
+    rcpp_result_gen = Rcpp::wrap(OjaRankSGD(mu, X, B, batch, gamma0, gammas, v0, n, d, nq, trck));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -125,6 +125,23 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// gfunCLL
+arma::vec gfunCLL(arma::mat v, arma::mat X, arma::mat mu, int B, int n, int d, int nv);
+RcppExport SEXP _OjaQuantiles_gfunCLL(SEXP vSEXP, SEXP XSEXP, SEXP muSEXP, SEXP BSEXP, SEXP nSEXP, SEXP dSEXP, SEXP nvSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type v(vSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< int >::type B(BSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type d(dSEXP);
+    Rcpp::traits::input_parameter< int >::type nv(nvSEXP);
+    rcpp_result_gen = Rcpp::wrap(gfunCLL(v, X, mu, B, n, d, nv));
+    return rcpp_result_gen;
+END_RCPP
+}
 // objfSpatialC
 arma::vec objfSpatialC(arma::mat mu, arma::mat X, arma::vec u, double alpha, int n, int d, int nmu);
 RcppExport SEXP _OjaQuantiles_objfSpatialC(SEXP muSEXP, SEXP XSEXP, SEXP uSEXP, SEXP alphaSEXP, SEXP nSEXP, SEXP dSEXP, SEXP nmuSEXP) {
@@ -142,16 +159,46 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// euclNorm
+double euclNorm(arma::vec x, int d);
+RcppExport SEXP _OjaQuantiles_euclNorm(SEXP xSEXP, SEXP dSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type d(dSEXP);
+    rcpp_result_gen = Rcpp::wrap(euclNorm(x, d));
+    return rcpp_result_gen;
+END_RCPP
+}
+// spatialRankC
+arma::mat spatialRankC(arma::mat mu, arma::mat X, int n, int d, int nmu);
+RcppExport SEXP _OjaQuantiles_spatialRankC(SEXP muSEXP, SEXP XSEXP, SEXP nSEXP, SEXP dSEXP, SEXP nmuSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type d(dSEXP);
+    Rcpp::traits::input_parameter< int >::type nmu(nmuSEXP);
+    rcpp_result_gen = Rcpp::wrap(spatialRankC(mu, X, n, d, nmu));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_OjaQuantiles_signC", (DL_FUNC) &_OjaQuantiles_signC, 1},
     {"_OjaQuantiles_cvectorC", (DL_FUNC) &_OjaQuantiles_cvectorC, 2},
     {"_OjaQuantiles_grdC", (DL_FUNC) &_OjaQuantiles_grdC, 5},
     {"_OjaQuantiles_OjaSGD", (DL_FUNC) &_OjaQuantiles_OjaSGD, 12},
-    {"_OjaQuantiles_OjaSGD2", (DL_FUNC) &_OjaQuantiles_OjaSGD2, 11},
+    {"_OjaQuantiles_OjaRankSGD", (DL_FUNC) &_OjaQuantiles_OjaRankSGD, 11},
     {"_OjaQuantiles_objfC", (DL_FUNC) &_OjaQuantiles_objfC, 7},
     {"_OjaQuantiles_gfunC", (DL_FUNC) &_OjaQuantiles_gfunC, 6},
+    {"_OjaQuantiles_gfunCLL", (DL_FUNC) &_OjaQuantiles_gfunCLL, 7},
     {"_OjaQuantiles_objfSpatialC", (DL_FUNC) &_OjaQuantiles_objfSpatialC, 7},
+    {"_OjaQuantiles_euclNorm", (DL_FUNC) &_OjaQuantiles_euclNorm, 2},
+    {"_OjaQuantiles_spatialRankC", (DL_FUNC) &_OjaQuantiles_spatialRankC, 5},
     {NULL, NULL, 0}
 };
 

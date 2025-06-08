@@ -17,8 +17,8 @@ OjaSGD <- function(X, u, alpha, B, batch, gamma0, gammas, x0, n, d, nq, trck) {
     .Call(`_OjaQuantiles_OjaSGD`, X, u, alpha, B, batch, gamma0, gammas, x0, n, d, nq, trck)
 }
 
-OjaSGD2 <- function(X, u, alpha, B, batch, gamma0, x0, n, d, nq, trck) {
-    .Call(`_OjaQuantiles_OjaSGD2`, X, u, alpha, B, batch, gamma0, x0, n, d, nq, trck)
+OjaRankSGD <- function(mu, X, B, batch, gamma0, gammas, v0, n, d, nq, trck) {
+    .Call(`_OjaQuantiles_OjaRankSGD`, mu, X, B, batch, gamma0, gammas, v0, n, d, nq, trck)
 }
 
 objfC <- function(mu, X, u, alpha, n, d, nmu) {
@@ -29,7 +29,19 @@ gfunC <- function(v, X, mu, n, d, nv) {
     .Call(`_OjaQuantiles_gfunC`, v, X, mu, n, d, nv)
 }
 
+gfunCLL <- function(v, X, mu, B, n, d, nv) {
+    .Call(`_OjaQuantiles_gfunCLL`, v, X, mu, B, n, d, nv)
+}
+
 objfSpatialC <- function(mu, X, u, alpha, n, d, nmu) {
     .Call(`_OjaQuantiles_objfSpatialC`, mu, X, u, alpha, n, d, nmu)
+}
+
+euclNorm <- function(x, d) {
+    .Call(`_OjaQuantiles_euclNorm`, x, d)
+}
+
+spatialRankC <- function(mu, X, n, d, nmu) {
+    .Call(`_OjaQuantiles_spatialRankC`, mu, X, n, d, nmu)
 }
 

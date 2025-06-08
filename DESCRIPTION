@@ -1,8 +1,8 @@
 Package: OjaQuantiles
 Type: Package
 Title: Computation of the Oja quantiles for multivariate data
-Version: 1.1.3
-Date: 2025-05-08
+Version: 1.1.5
+Date: 2025-06-08
 Author: Stanislav Nagy
 Maintainer: Stanislav Nagy
       <nagy@karlin.mff.cuni.cz>

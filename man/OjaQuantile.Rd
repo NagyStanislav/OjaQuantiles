@@ -113,7 +113,8 @@ drastically:
 \item The algorithm using \code{method="SGD"} is very fast, and can be used 
 also for higher values of \code{n} and \code{d}. 
 \item Using \code{method="optim"} involves the exact evaluation of the 
-complete objective function of an Oja quantile (see function \link{objf}), 
+complete objective function of an Oja quantile (see function 
+\link{OjaQuantileObjective}), 
 which is of order \code{O(n^d)}. Thus, running with \code{method="optim"} and
 higher \code{d} or \code{n} is extremely slow. 
 }
