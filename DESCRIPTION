@@ -10,4 +10,4 @@ Description: Iterative and exact procedures for computing the Oja quantiles, ran
 License: GPL-2
 Imports: Rcpp (>= 1.0.12), ICSNP
 LinkingTo: Rcpp, RcppArmadillo
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
