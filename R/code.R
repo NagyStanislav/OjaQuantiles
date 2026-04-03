@@ -273,6 +273,15 @@ OjaQuantile = function(X, u, alpha,
 #' objective function. Used for calculating the Oja outlyingness/depth. A 
 #' positive integer. By default taken to be \code{B2=1e4}.
 #' 
+#' @param whiten The pre-whitening method of the dataset to achieve better
+#' numerical stability. Possible values are \code{"none"}, \code{"cov"}, 
+#' \code{"var"}, or \code{"Tyler"}. Default is \code{"cov"}, which means that
+#' whitening is performed using the sample
+#' covariance matrix. This is the same as calling \code{whiten="var"}. With
+#' \code{whiten=="none"} no pre-whitening is performed. For \code{"Tyler"},
+#' the data matrix is whitened using the robust Tyler's scatter 
+#' estimator, with a center at the spatial median. 
+#' 
 #' @param batch Size of mini-batches for the stochastic gradient descent 
 #' algorithm. In each iteration of the algorithm, \code{batch} of 
 #' randomly selected \code{d}-tuples of points from \code{X} are taken, and 
@@ -323,15 +332,38 @@ OjaQuantile = function(X, u, alpha,
 #' summary(res$out)
 
 OjaRank = function(mu, X, method="SGD", 
-                   B=1e3, B2=1e4, batch=50){
+                   B=1e3, B2=1e4, 
+                   whiten="cov", batch=50){
 
   n = nrow(X)
   d = ncol(X)
-  X = t(X)
+  
   method = match.arg(method,c("SGD","random"))
-  if(is.matrix(mu)) mu = t(mu)
-  if((!is.matrix(mu))&(d==1)) mu = matrix(mu,nrow=1)
-  if((!is.matrix(mu))&(d>1))  mu = matrix(mu,ncol=1)
+  whiten = match.arg(whiten,c("Tyler","var","cov","none"))
+  
+  # whitening transform
+  if(d==1){
+    whiten="none" # no whitening is needed
+  }
+  if(whiten=="Tyler"){
+    S = ICSNP::tyler.shape(X, location=ICSNP::spatial.median(X))
+  }
+  if((whiten=="var")|(whiten=="cov")){
+    S = var(X)
+  }
+  if(whiten=="none") S = diag(d)
+  #
+  eS = eigen(S)
+  Shi = eS$vectors%*%diag(eS$values^{-1/2})%*%t(eS$vectors)
+  Sh = eS$vectors%*%diag(eS$values^{+1/2})%*%t(eS$vectors)
+  X0 = X       # store the original (un-whitenened) X in X0
+  X = X0%*%Shi  # whitened X
+  if((!is.matrix(mu))&(d==1)) mu = matrix(mu,ncol=1)
+  if((!is.matrix(mu))&(d>1))  mu = matrix(mu,nrow=1)
+  mu = mu%*%Shi # whitened mu
+  
+  X = t(X)
+  mu = t(mu)
   nqs = ncol(mu)
   if(nrow(mu)!=d) stop("The dimensions of X and mu do not match.")
   
@@ -353,7 +385,9 @@ OjaRank = function(mu, X, method="SGD",
     }
     if(B2==0) resO = rep(NA,nqs)
     
-    return(list(signs = t(resS$q), outlyingness = resO))
+    signs = t(resS$q)%*%Sh
+    signs = t(apply(signs, 1, function(x) x/c(sqrt(crossprod(x)))))
+    return(list(signs = signs, outlyingness = resO))
   }
   
   if(method=="random"){
@@ -366,7 +400,10 @@ OjaRank = function(mu, X, method="SGD",
       q[i,] = g$domain[which.max(g$vals),]
       resO[i] = max(g$vals)
     }
-    return(list(signs = q, outlyingness = resO))
+    
+    signs = q%*%Sh
+    signs = t(apply(signs, 1, function(x) x/c(sqrt(crossprod(x)))))
+    return(list(signs = signs, outlyingness = resO))
   }
 }
 
