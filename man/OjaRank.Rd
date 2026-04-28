@@ -4,19 +4,27 @@
 \alias{OjaRank}
 \title{Oja Rank}
 \usage{
-OjaRank(mu, X, method = "SGD", B = 1000, B2 = 10000, batch = 50)
+OjaRank(
+  mu,
+  X,
+  method = "SGD",
+  B = 1000,
+  B2 = 10000,
+  whiten = "cov",
+  batch = 50
+)
 }
 \arguments{
 \item{mu}{A single vector of dimension \code{d}, or a numerical matrix
 of dimension \code{nq}-times-\code{d} of \code{nq} vectors in dimension 
 \code{d}. Each row of the matrix corresponds to one point in which
-the Oja ranks should be calclulated.}
+the Oja ranks should be calculated.}
 
 \item{X}{A numerical matrix with the dataset of dimension 
 \code{n}-times-\code{d}, where \code{n} is the size of the dataset and 
 \code{d} is its dimension.}
 
-\item{method}{An idicator of the method used to compute the Oja ranks. 
+\item{method}{An indicator of the method used to compute the Oja ranks. 
 Can be either \code{method="SGD"} for stochastic gradient descent (default), 
 or \code{method="random"} for a naive random optimization method using 
 the complete objective function evaluated at a large number of randomly
@@ -29,6 +37,15 @@ positive integer. By default taken to be \code{B=1e3}.}
 \item{B2}{Number of iterations for evaluating the maximum value of the 
 objective function. Used for calculating the Oja outlyingness/depth. A 
 positive integer. By default taken to be \code{B2=1e4}.}
+
+\item{whiten}{The pre-whitening method of the dataset to achieve better
+numerical stability. Possible values are \code{"none"}, \code{"cov"}, 
+\code{"var"}, or \code{"Tyler"}. Default is \code{"cov"}, which means that
+whitening is performed using the sample
+covariance matrix. This is the same as calling \code{whiten="var"}. With
+\code{whiten=="none"} no pre-whitening is performed. For \code{"Tyler"},
+the data matrix is whitened using the robust Tyler's scatter 
+estimator, with a center at the spatial median.}
 
 \item{batch}{Size of mini-batches for the stochastic gradient descent 
 algorithm. In each iteration of the algorithm, \code{batch} of 

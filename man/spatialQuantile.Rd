@@ -14,7 +14,7 @@ spatialQuantile(X, u, alpha)
 \item{u}{A single unit vector of dimension \code{d}, or a numerical matrix
 of dimension \code{nq}-times-\code{d} of \code{nq} unit vectors in dimension 
 \code{d}. Each row of the matrix corresponds to one unit direction in which
-the spatial quantile should be calclulated.}
+the spatial quantile should be calculated.}
 
 \item{alpha}{Magnitudes \code{alpha} of the spatial quantiles to be 
 calculated. A single value in the interval \code{[0,1]} if \code{u} is a 

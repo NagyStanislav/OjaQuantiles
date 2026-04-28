@@ -16,7 +16,7 @@ A numerical vector of dimension \code{d}, or a matrix of dimension
 \code{d} is its dimension.}
 
 \item{u}{A single unit vector of dimension \code{d}. Corresponds to the unit 
-direction in which the Oja quantile should be calclulated.}
+direction in which the Oja quantile should be calculated.}
 
 \item{alpha}{The magnitude \code{alpha} of the Oja quantile to be 
 calculated. A single value in the interval \code{[0,1]}.}

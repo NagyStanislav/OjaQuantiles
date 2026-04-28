@@ -10,7 +10,7 @@ spatialRank(mu, X)
 \item{mu}{A single vector of dimension \code{d}, or a numerical matrix
 of dimension \code{nq}-times-\code{d} of \code{nq} vectors in dimension 
 \code{d}. Each row of the matrix corresponds to one point in which
-the spatial ranks should be calclulated.}
+the spatial ranks should be calculated.}
 
 \item{X}{A numerical matrix with the dataset of dimension 
 \code{n}-times-\code{d}, where \code{n} is the size of the dataset and 

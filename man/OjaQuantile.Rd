@@ -26,7 +26,7 @@ OjaQuantile(
 \item{u}{A single unit vector of dimension \code{d}, or a numerical matrix
 of dimension \code{nq}-times-\code{d} of \code{nq} unit vectors in dimension 
 \code{d}. Each row of the matrix corresponds to one unit direction in which
-the Oja quantile should be calclulated.}
+the Oja quantile should be calculated.}
 
 \item{alpha}{Magnitudes \code{alpha} of the Oja quantiles to be calculated.
 A single value in the interval \code{[0,1]} if \code{u} is a 
@@ -34,7 +34,7 @@ single vector, or a numerical vector of values inside \code{[0,1]} of length
 \code{nq} if \code{u} is a matrix with \code{nq} rows. The \code{i}-th 
 element of \code{alpha} corresponds to the \code{i}-th row of \code{u}.}
 
-\item{method}{An idicator of the method used to compute the Oja quantiles. 
+\item{method}{An indicator of the method used to compute the Oja quantiles. 
 Can be either \code{method="SGD"} for stochastic gradient descent (default), 
 or \code{method="optim"} for a numerical optimization method using function
 \link[stats]{optim}. 

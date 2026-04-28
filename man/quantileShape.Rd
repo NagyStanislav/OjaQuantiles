@@ -53,13 +53,13 @@ A list with two components:
 \description{
 An estimator of the shape matrix of multivariate elliptically symmetric
 distributions. The estimator is based on a notion of directional quantiles
-(spatial quantiles of Oja quantiles).
+(spatial quantiles or Oja quantiles).
 }
 \details{
 The shape matrix is defined as the sample variance matrix of a collection of
 directional quantiles of \code{X}. The quantiles are taken at all levels in
 the vector \code{alpha}; at each level, \code{qs} quantiles are considered.
-In total, \code{length(alpha)*qs} quantiles are considered. The final matrix 
+In total, \code{length(alpha)*qs} quantiles are taken. The final matrix 
 is possibly scaled so that its determinant (if \code{scaling="determinant"})
 of trace (if \code{scaling="trace"}) equals \code{scale}.
 }

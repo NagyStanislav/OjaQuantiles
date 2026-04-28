@@ -13,7 +13,7 @@
 #' @param u A single unit vector of dimension \code{d}, or a numerical matrix
 #' of dimension \code{nq}-times-\code{d} of \code{nq} unit vectors in dimension 
 #' \code{d}. Each row of the matrix corresponds to one unit direction in which
-#' the Oja quantile should be calclulated.
+#' the Oja quantile should be calculated.
 #' 
 #' @param alpha Magnitudes \code{alpha} of the Oja quantiles to be calculated.
 #' A single value in the interval \code{[0,1]} if \code{u} is a 
@@ -21,7 +21,7 @@
 #' \code{nq} if \code{u} is a matrix with \code{nq} rows. The \code{i}-th 
 #' element of \code{alpha} corresponds to the \code{i}-th row of \code{u}.
 #' 
-#' @param method An idicator of the method used to compute the Oja quantiles. 
+#' @param method An indicator of the method used to compute the Oja quantiles. 
 #' Can be either \code{method="SGD"} for stochastic gradient descent (default), 
 #' or \code{method="optim"} for a numerical optimization method using function
 #' \link[stats]{optim}. 
@@ -253,13 +253,13 @@ OjaQuantile = function(X, u, alpha,
 #' @param mu A single vector of dimension \code{d}, or a numerical matrix
 #' of dimension \code{nq}-times-\code{d} of \code{nq} vectors in dimension 
 #' \code{d}. Each row of the matrix corresponds to one point in which
-#' the Oja ranks should be calclulated.
+#' the Oja ranks should be calculated.
 #' 
 #' @param X A numerical matrix with the dataset of dimension 
 #' \code{n}-times-\code{d}, where \code{n} is the size of the dataset and 
 #' \code{d} is its dimension.
 #' 
-#' @param method An idicator of the method used to compute the Oja ranks. 
+#' @param method An indicator of the method used to compute the Oja ranks. 
 #' Can be either \code{method="SGD"} for stochastic gradient descent (default), 
 #' or \code{method="random"} for a naive random optimization method using 
 #' the complete objective function evaluated at a large number of randomly
@@ -419,7 +419,7 @@ OjaRank = function(mu, X, method="SGD",
 #' @param u A single unit vector of dimension \code{d}, or a numerical matrix
 #' of dimension \code{nq}-times-\code{d} of \code{nq} unit vectors in dimension 
 #' \code{d}. Each row of the matrix corresponds to one unit direction in which
-#' the spatial quantile should be calclulated.
+#' the spatial quantile should be calculated.
 #' @param alpha Magnitudes \code{alpha} of the spatial quantiles to be 
 #' calculated. A single value in the interval \code{[0,1]} if \code{u} is a 
 #' single vector, or a numerical vector of values inside \code{[0,1]} of length
@@ -486,7 +486,7 @@ spatialQuantile = function(X, u, alpha){
 #' @param mu A single vector of dimension \code{d}, or a numerical matrix
 #' of dimension \code{nq}-times-\code{d} of \code{nq} vectors in dimension 
 #' \code{d}. Each row of the matrix corresponds to one point in which
-#' the spatial ranks should be calclulated.
+#' the spatial ranks should be calculated.
 #' 
 #' @param X A numerical matrix with the dataset of dimension 
 #' \code{n}-times-\code{d}, where \code{n} is the size of the dataset and 
@@ -559,7 +559,7 @@ spatialRank = function(mu, X){
 #' \code{n}-times-\code{d}, where \code{n} is the size of the dataset and 
 #' \code{d} is its dimension.
 #' @param u A single unit vector of dimension \code{d}. Corresponds to the unit 
-#' direction in which the Oja quantile should be calclulated.
+#' direction in which the Oja quantile should be calculated.
 #' @param alpha The magnitude \code{alpha} of the Oja quantile to be 
 #' calculated. A single value in the interval \code{[0,1]}.
 #'
@@ -699,7 +699,7 @@ OjaRankObjective = function(mu, X, eval=1001){
 #' \code{n}-times-\code{d}, where \code{n} is the size of the dataset and 
 #' \code{d} is its dimension.
 #' @param u A single unit vector of dimension \code{d}. Corresponds to the unit 
-#' direction in which the spatial quantile should be calclulated.
+#' direction in which the spatial quantile should be calculated.
 #' @param alpha The magnitude \code{alpha} of the spatial quantile to be 
 #' calculated. A single value in the interval \code{[0,1]}.
 #'
@@ -1073,7 +1073,7 @@ trimmedShape = function(X, outl, alpha = 1/2, scale = NULL,
 #'
 #' An estimator of the shape matrix of multivariate elliptically symmetric
 #' distributions. The estimator is based on a notion of directional quantiles
-#' (spatial quantiles of Oja quantiles).
+#' (spatial quantiles or Oja quantiles).
 #' 
 #' @param X A numerical matrix with the dataset of dimension 
 #' \code{n}-times-\code{d}, where \code{n} is the size of the dataset and 
@@ -1107,7 +1107,7 @@ trimmedShape = function(X, outl, alpha = 1/2, scale = NULL,
 #' The shape matrix is defined as the sample variance matrix of a collection of
 #' directional quantiles of \code{X}. The quantiles are taken at all levels in
 #' the vector \code{alpha}; at each level, \code{qs} quantiles are considered.
-#' In total, \code{length(alpha)*qs} quantiles are considered. The final matrix 
+#' In total, \code{length(alpha)*qs} quantiles are taken. The final matrix 
 #' is possibly scaled so that its determinant (if \code{scaling="determinant"})
 #' of trace (if \code{scaling="trace"}) equals \code{scale}.  
 #'
@@ -1190,4 +1190,316 @@ quantileShape = function(X, alpha = 1/2,
       res$shape = res$shape*(scale/sum(diag(res$shape)))
   }
   return(res)
+}
+
+#### OTShape ----
+#' Shape Estimator Based on Optimal Transport Quantiles
+#'
+#' An estimator of the shape matrix of multivariate elliptically symmetric
+#' distributions. The estimator is based on a notion of directional optimal 
+#' transport (OT) quantiles.
+#' 
+#' @param X A numerical matrix with the dataset of dimension 
+#' \code{n}-times-\code{d}, where \code{n} is the size of the dataset and 
+#' \code{d} is its dimension.
+#' 
+#' @param alpha A single value in the interval \code{(0,1]} specifying the 
+#' proportion of the most central observations (according to the OT quantiles)
+#' used to construct the shape estimate. By default we take \code{alpha=1/2}.
+#'
+#' @param scale A scale factor that sets the determinant or trace of the 
+#' resulting estimator to a fixed constant \code{scale}. No scaling is applied
+#' by default.
+#' 
+#' @param scaling An indicator of the scaling method to be used on the resulting
+#' matrix. Possible values are \code{"none"} (no scaling, default), 
+#' \code{"trace"} for scaling by setting a trace of the resulting matrix, or
+#' \code{"determinant"} for scaling by setting the determinant of the resulting
+#' matrix.
+#' 
+#' @details
+#' The shape matrix is defined as the sample variance matrix of a proportion
+#' \code{alpha} of the deepest (most central) OT qunatiles of \code{X}.
+#' The final matrix 
+#' is possibly scaled so that its determinant (if \code{scaling="determinant"})
+#' of trace (if \code{scaling="trace"}) equals \code{scale}.  
+#'
+#' @return A list with two components:
+#' \itemize{
+#' \item \code{location}: A vector of length \code{d} with the corresponding
+#' (Oja/spatial) directional median.
+#' \item \code{shape}: A \code{d}-times-\code{d} estimated shape matrix.
+#' } 
+#' 
+#' @seealso \link{depth.OT} for the OT quantiles.
+#'
+#' @examples
+#' n = 50
+#' d = 2
+#' rho = -0.95
+#' Sigma = matrix(c(1,-0.95,-0.95,1),ncol=2)
+#' 
+#' # scaling by trace of the true matrix
+#' scl = sum(diag(Sigma))
+#' 
+#' X = mvtnorm::rmvnorm(n, sigma=Sigma)
+#' 
+#' res = OTShape(X, scale=scl, scaling="trace")
+#'   
+#' plot(X,pch=16,xlab="",ylab="",cex=.25,asp=1)
+#' car::ellipse(res$loc,res$shape,sqrt(qchisq(.95,df=d)), center.cex=1,
+#'   col="orange",lty=1,lwd=3)
+#' car::ellipse(c(0,0),Sigma,sqrt(qchisq(.95,df=d)), center.cex=1,
+#'  col="brown",lty=2,lwd=3)  
+
+OTShape = function(X, alpha = 1/2,  scale = NULL,
+                   scaling = c("none","trace","determinant")){
+  scaling = match.arg(scaling,c("none","trace","determinant"))
+  OTD = depth.OT(X)$depthX
+  XOT = X[OTD>=1-alpha,]
+  d = ncol(X)
+  res = list()
+  res$location = X[which.max(OTD),]
+  res$shape = var(XOT)
+  if(!is.null(scale)){
+    if(scaling=="determinant") 
+      res$shape = res$shape*((scale/det(res$shape))^{1/d})
+    if(scaling=="trace") 
+      res$shape = res$shape*(scale/sum(diag(res$shape)))
+  }
+  return(res)  
+}
+
+#### Optimal transport quantiles ----
+#' Optimal Transport Quantiles
+#'
+#' Computation of the optimal transport (Monge-Kantorovich) quantiles for 
+#' multivariate data, using either function \link[transport]{transport} 
+#' (default) or function \link[clue]{solve_LSAP}. The procedure also allows 
+#' interpolation of optimal transport depth values for the out-sample points.
+#' 
+#' @param X A numerical matrix with the dataset of dimension 
+#' \code{n}-times-\code{d}, where \code{n} is the size of the dataset and 
+#' \code{d} is its dimension.
+#' @param Y An optional numerical matrix of the points where the optimal 
+#' transport depth with respect to \code{X} should be computed; a numerical 
+#' matrix of size \code{m}-times-\code{d}.
+#' @param n.S A positive integer giving that determines the size of the
+#' grid in the unit ball. The parameter \code{n.S} specifies the number of 
+#' points on each quantile contour.  
+#' @param method Interpolation method used to establish the optimal transport
+#' depth of \code{Y} (if available) with respect to \code{X}. The default choice
+#' is \code{"Tps"}, providing the thin-plate spline interpolation from function
+#' \link[fields]{Tps}. An alternative is, for \code{d=2}, to use 
+#' \code{method="interp"}, which implements the interpolation from function
+#' \link[interp]{interpp}.
+#' @param package The method used to perform the optimal transport optimization.
+#' Possible choices are \code{"transport"} (function 
+#' \link[transport]{transport}, default) or \code{"clue"} (function 
+#' \link[clue]{solve_LSAP}). The two methods should give the same results, but
+#' the default choice is usually faster.
+#' @param fastint An integer indicator of the choice of an interpolation
+#' procedure. Possible choices are (a) \code{-1}, which enforces 
+#' \code{method="Tps"} for any sample size and dimension (this could be very 
+#' slow and numerically unstable in higher dimensions), (b) \code{0}, which 
+#' attempts to use \code{method="Tps"}, but if the method crashes numerically, 
+#' uses instead the \code{1}-nearest neighbor interpolation, (c) \code{1}, 
+#' performing the \code{k}-nearest neighbor interpolation with \code{k} given
+#' by default by \code{1}.
+#' @param k The number of nearest neighbors to consider if \code{fastint==1}.
+#'
+#' @return A list with the following components:
+#' \itemize{
+#' \item \code{RX}: A vector of optimal transport ranks of the rows of \code{X}.
+#' Rank 0 stands for the row of \code{X} being the deepest point 
+#' (the OT-median), with increasing ranks for more outlying points.
+#' \item \code{DirX}: An index of a direction in the unit sphere, corresponding
+#' to the direction of the optimal transport quantile of the row of \code{X}. 
+#' This is useful especially in dimension \code{d=2}, where these directions 
+#' are sorted along the circumference of the unit circle. This allows to plot
+#' different contours of the optimal transport quantiles in the plane.
+#' \item \code{depthX}: A vector of optimal transport depths of rows of \code{X}
+#' with respect to \code{X}; a numerical vector of \code{n} values between 0 and
+#' 1.
+#' \item \code{depthY}: A vector of optimal transport depths of rows of \code{Y}
+#' with respect to \code{X}; a numerical vector of \code{m} values between 0 and
+#' 1.
+#' } 
+#' 
+#' @references Hallin, M., del Barrio, E., Cuesta-Albertos, J., and Matran, C. 
+#' (2021). Distribution and quantile functions, ranks and signs in dimension 
+#' \code{d}: a measure transportation approach. \emph{Ann. Statist.}, 
+#' 49:1139-1165.
+#' 
+#' @references Hallin, M. and Mordant, G. (2023).
+#' On the finite-sample performance of measure-transportation-based multivariate 
+#' rank tests. \emph{Robust and multivariate statistical methods-Festschrift in 
+#' honor of D. E. Tyler,} pp 87-119.
+#'
+#' @examples
+#' n = 100
+#' d = 2
+#' X = matrix(rnorm(n*d),ncol=d)
+#' 
+#' res = depth.OT(X)
+#' rnk = res$RX
+#' dir = res$DirX
+#' 
+#' alphas = floor(seq(min(rnk),max(rnk),length=10))
+#' alphas = alphas[-10]
+#' alphas[alphas==0] = min(rnk)
+#' 
+#' par(mar=c(2.5,2.5,.5,.5), cex.axis=1.5)
+#' plot(X,pch=16,xlab="",ylab="",cex=.25,asp=1)
+#' for(i in alphas){
+#'   inds = (rnk==i)
+#'   Xa = X[inds,]
+#'   da = dir[inds]
+#'   points(Xa[order(da),], col="tomato", pch=16,cex=0.75)
+#'   polygon(Xa[order(da),], border="tomato",lwd=2, pch=16,cex=0.35)
+#' }
+
+depth.OT = function(X, Y=NULL, n.S = NULL, 
+                    method="Tps", 
+                    package="transport",
+                    fastint=NULL, k = 1){
+  
+  sqdist <- function(a,b){
+    return(abs(a - b)^2)
+  }
+  
+  n = nrow(X)
+  d = ncol(X)
+  if(is.null(n.S)){
+    (n.S = floor(1.3*n^{(d-1)/d})) # Hallin and Mordant (2023)
+  }
+  
+  if(n%/%n.S <= 1) n.S = floor(n.S/2) # sanity check for large d, low n
+  n.R = n%/%n.S
+  n0 = n%%n.S
+  
+  rks = c(rep(1:n.R, each = n.S), rep(0,n0))
+  dirs = c(rep((1:(n.S)), n.R), rep(0,n0))
+  xs1 <- rep(1:n.R, each = n.S)/(n.R + 1)
+  xs2 <- rep((0:(n.S-1))/n.S, n.R)
+  
+  if(d==2){
+    s1 <- c(xs1 * cos(2 * pi * xs2), rep(0,n0))
+    s2 <- c(xs1 * sin(2 * pi * xs2), rep(0,n0))
+    grid <- cbind(s1, s2)
+  }
+  
+  if(d>2){
+    u = randtoolbox::halton(n.S, dim=d) 
+    u = qnorm(u) # as in Hallin and Mordant (2023)
+    u = t(apply(u, 1, function(x) x/sqrt(c(crossprod(x)))))
+    xs2 = rep((1:(n.S)), n.R)
+    grid = rbind(xs1*u[xs2,], matrix(0, nrow=n0, ncol=d))
+  }
+  
+  if(package=="clue"){
+    y <- X
+    costes = matrix(0, nrow=n, ncol=n)
+    for(j in 1:d) costes = costes + t(outer(grid[,j], y[,j], "sqdist"))
+    asignacion <- clue::solve_LSAP(costes)
+    perm = (1:n)[asignacion]
+  } else {
+    Xpp <- transport::pp(X)          # unweighted point pattern, each point has mass 1
+    Ypp <- transport::pp(grid)
+    plan <- transport::transport(Xpp, Ypp, p = 2)
+    perm <- integer(nrow(X))
+    perm[plan$from] <- plan$to
+  }
+  
+  FB <- grid[perm, ] 
+  RX = rks[perm]
+  DirX = dirs[perm]
+  
+  OTD = 1 - apply(FB, 1, crossprod) # depth of X wrt X
+  
+  if(!is.null(Y)){
+    if(d>2) method="Tps"
+    if(method=="interp"){
+      OTDY = interp::interpp(x = X[,1], y = X[,2], z = OTD, xo = Y[,1], yo = Y[,2])$z
+      OTDY[is.na(OTDY)] = 0
+    } else {
+      if(is.null(fastint)){
+        fastint = 2*(n>1500)
+      }
+      if(fastint==-1){
+        fit = fields::Tps(X, OTD, lambda=0);
+        OTDY = predict(fit, Y);
+        OTDY = pmin(pmax(0, OTDY),1)
+      }
+      if(fastint==0){
+        OTDY = tryCatch(
+          {
+            fit = fields::Tps(X, OTD, lambda=0);
+            OTDY = predict(fit, Y);
+            OTDY;
+          },   
+          error = function(e) {
+            cat("Tps error:", conditionMessage(e), "\n");
+            dsts = fields::rdist(x1 = X, x2 = Y);
+            OTDY = OTD[apply(dsts, 2, which.min)];
+            OTDY
+          }
+        )
+        OTDY = pmin(pmax(0, OTDY),1)
+      }
+      if(fastint==2) fastint=1
+      if(fastint==1){
+        # the depth of the nearest point from X
+        dsts = fields::rdist(x1 = X, x2 = Y)
+        # OTDY = OTD[apply(dsts, 2, which.min)]
+        OTDY = apply(dsts,2, function(x) mean(OTD[order(x)[1:k]]))
+      }
+    }
+  } else OTDY = NULL
+  
+  return(list(RX = RX, DirX = DirX, depthX = OTD, depthY = OTDY))
+}
+
+#### in.poly ----
+#' Counting the number of points in a polygon 
+#'
+#' An auxiliary function that gives the number of points contained in a 
+#' (possibly non-convex) polygon in the plane.
+#' 
+#' @param poly An \code{m}-times-\code{2} matrix of points on the boundary of 
+#' the polygon, ordered along the boundary.
+#' 
+#' @param X An \code{n}-times-\code{2} matrix of points to be evaluated.
+#'
+#' @return A Boolean vector of length \code{n}, with \code{TRUE} if and only if
+#' the corresponding row of \code{X} is inside the polygon given by \code{poly}.
+#'
+#' @examples
+#' # Polygon vertices (x, y) - non-convex example
+#' poly <- matrix(c(0, 0, 4, 0, 4, 1, 1, 2, 4, 3, 4, 4, 0, 4), ncol = 2, 
+#'   byrow = TRUE)
+#'   
+#' n = 100
+#' X = matrix(rnorm(n*2)+2, ncol=2)
+#' inp = in.poly(poly, X)
+#' 
+#' plot(poly, asp=1)
+#' polygon(poly, col="beige")
+#' points(X, col=inp+1,pch=16)
+
+in.poly = function(poly, X){
+  
+  poly = rbind(poly, poly[1,]) # close the polygon
+  # Create sf polygon
+  poly_sf <- sf::st_polygon(list(poly)) |> 
+    sf::st_sfc() |> 
+    sf::st_sf()
+  # Example points to test
+  points_df <- data.frame(
+    x = X[,1],
+    y = X[,2]
+  )
+  points_sf <- sf::st_as_sf(points_df, coords = c("x", "y"))
+  inside <- sf::st_within(points_sf, poly_sf, sparse = FALSE)
+  return(inside)
 }

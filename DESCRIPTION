@@ -1,13 +1,13 @@
 Package: OjaQuantiles
 Type: Package
 Title: Computation of the Oja quantiles for multivariate data
-Version: 1.1.6
-Date: 2026-04-26
+Version: 1.2.0
+Date: 2026-04-28
 Author: Stanislav Nagy
 Maintainer: Stanislav Nagy
       <nagy@karlin.mff.cuni.cz>
 Description: Iterative and exact procedures for computing the Oja quantiles, ranks, signs, and depth for multivariate data.
 License: GPL-2
-Imports: Rcpp (>= 1.0.12), ICSNP
+Imports: Rcpp (>= 1.0.12), ICSNP, clue, transport, interp, fields, randtoolbox, sf
 LinkingTo: Rcpp, RcppArmadillo
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
