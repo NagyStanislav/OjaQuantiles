@@ -2,7 +2,7 @@
 % Please edit documentation in R/code.R
 \name{objfSpatial}
 \alias{objfSpatial}
-\title{Objective Function for the spatial quantiles}
+\title{Objective Function for the Spatial Quantiles}
 \usage{
 objfSpatial(mu, X, u, alpha)
 }

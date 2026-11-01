@@ -45,7 +45,7 @@ matrix.}
 \value{
 A list with two components:
 \itemize{
-\item \code{location}: A vector of legnth \code{d} with the corresponding
+\item \code{location}: A vector of length \code{d} with the corresponding
 (Oja/spatial) directional median.
 \item \code{shape}: A \code{d}-times-\code{d} estimated shape matrix.
 }
@@ -61,7 +61,7 @@ directional quantiles of \code{X}. The quantiles are taken at all levels in
 the vector \code{alpha}; at each level, \code{qs} quantiles are considered.
 In total, \code{length(alpha)*qs} quantiles are taken. The final matrix 
 is possibly scaled so that its determinant (if \code{scaling="determinant"})
-of trace (if \code{scaling="trace"}) equals \code{scale}.
+or trace (if \code{scaling="trace"}) equals \code{scale}.
 }
 \examples{
 n = 50

@@ -32,7 +32,7 @@ exact values of the objective function, one entry per a row of \code{V}.
 }
 \description{
 The complete objective function to be minimized for computing the Oja 
-ranks/depht/outlyingness for multivariate data.
+ranks/depth/outlyingness for multivariate data.
 }
 \note{
 Since this is an exact evaluation of the objective function, running

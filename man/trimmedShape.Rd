@@ -41,7 +41,7 @@ matrix.}
 \value{
 A list with two components:
 \itemize{
-\item \code{location}: A vector of legnth \code{d} with the corresponding
+\item \code{location}: A vector of length \code{d} with the corresponding
 location estimator, given as the sample mean of the observations considered
 in constructing the shape matrix estimator.
 \item \code{shape}: A \code{d}-times-\code{d} estimated shape matrix.
@@ -54,10 +54,10 @@ trimming is achieved by discarding observations with high outlyingness.
 }
 \details{
 The shape matrix is defined as the sample variance matrix of 
-\code{1-alpha}-proporition of rows of \code{X} with the lower outlyingness.
+\code{1-alpha}-proportion of rows of \code{X} with the lower outlyingness.
 The final matrix is possibly scaled so that its determinant 
 (if \code{scaling="determinant"})
-of trace (if \code{scaling="trace"}) equals \code{scale}.
+or trace (if \code{scaling="trace"}) equals \code{scale}.
 }
 \examples{
 n = 50

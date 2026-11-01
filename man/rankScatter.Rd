@@ -2,7 +2,7 @@
 % Please edit documentation in R/code.R
 \name{rankScatter}
 \alias{rankScatter}
-\title{An Oja/Tyler Scatter Estimator}
+\title{Oja/Tyler Scatter Estimator}
 \usage{
 rankScatter(
   X,
@@ -21,7 +21,7 @@ rankScatter(
 \item{method}{Possible values are \code{"Oja"} for the Oja ranks, 
 \code{"Tyler"} or \code{"spatial"} for the Tyler shape matrix constructed
 using the spatial ranks, or \code{"var"}, or \code{"cov"} for the matrix
-based on the trival sign vectors given simply by unit directions from the
+based on the trivial sign vectors given simply by unit directions from the
 sample mean of \code{X} to all data points.}
 
 \item{B}{Number of iterations of the stochastic gradient descent method
@@ -46,10 +46,10 @@ convergence of the algorithm should be printed. By default
 \value{
 A list with the following components:
 \itemize{
-\item \code{location}: A vector of legnth \code{d} with the corresponding
+\item \code{location}: A vector of length \code{d} with the corresponding
 location estimator, given as either the Oja median (if \code{method="Oja"}),
 the spatial median (if \code{method="Tyler"} or \code{method="spatial"}), or
-the same mean of \code{X} (if \code{method="cov"} or \code{method="var"}).
+the sample mean of \code{X} (if \code{method="cov"} or \code{method="var"}).
 \item \code{scatter}: A \code{d}-times-\code{d} estimated scatter matrix.
 \item \code{Xwhiten}: Matrix \code{X} whitened by the resulting scatter
 estimator. The rows of this matrix correspond to the approximately isotropic
@@ -59,18 +59,10 @@ of the scatter estimator.
 }
 }
 \description{
-An estimator of the scatter matrix of a multivariate distributions based on 
+An estimator of the scatter matrix of a multivariate distribution based on 
 the ideas of Tyler (1987). Can be used in conjunction with the Oja signs 
 (\link{OjaRank}) giving an Oja scatter estimator, or with the spatial signs
 (\link{spatialRank}) giving the classical Tyler scatter estimator.
-}
-\details{
-The shape matrix is defined as the weighted sample variance matrix of 
-\code{X}, where the weights attached to each row of \code{X} are 
-\code{(1-outl)^expn}.
-The final matrix is possibly scaled so that its determinant 
-(if \code{scaling="determinant"})
-of trace (if \code{scaling="trace"}) equals \code{scale}.
 }
 \examples{
 n = 50
@@ -98,7 +90,7 @@ car::ellipse(c(0,0),Sigma,sqrt(qchisq(.95,df=d)), center.cex=1,
 Tyler, D. E. (1987). A distribution-free M-estimator of 
 multivariate scatter. \emph{The Annals of Statistics}, 15, 234-251.
 
-Taskinen, S., Frahm, G., Nordhausen, K., and Oja H. (2022). A 
+Taskinen, S., Frahm, G., Nordhausen, K., and Oja, H. (2022). A 
 review of Tyler's shape matrix and its extensions. \emph{Robust and 
 Multivariate Statistical Methods}, pp 23-41.
 }

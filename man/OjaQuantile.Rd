@@ -9,7 +9,7 @@ OjaQuantile(
   u,
   alpha,
   method = "SGD",
-  averaging = "all",
+  averaging = "suffix",
   B = 10000,
   whiten = "cov",
   batch = NULL,
@@ -43,10 +43,10 @@ or \code{method="optim"} for a numerical optimization method using function
 \code{method="SGD"}.}
 
 \item{averaging}{The averaging method used for the final estimates using the 
-stochastic gradient method. By default set to \code{averaging="all"}, meaning
-that the resulting estimate is a weighted average of all the \code{B} 
-updates. Other possible values are \code{averaging="suffix"}, where the 
-weighted average of only the last \code{B/4} updates is considered, or
+stochastic gradient method. By default set to \code{averaging="suffix"}, 
+meaning that the resulting estimate is a weighted average of the last 
+\code{B/4} updates. Other possible values are \code{averaging="all"}, where 
+the resulting estimate is a weighted average of all the \code{B} updates, or
 \code{averaging="none"}, where only the final \code{B}th update is taken, 
 without any averaging.}
 
@@ -106,8 +106,9 @@ Iterative computation of the Oja quantiles for multivariate data:
 }
 }
 \note{
-The algorithm \code{method="optim"} typically gives more accurate 
-results. On the other hand, the speed of the two algorithms differs 
+In standard situations, one should use the default 
+\code{method="SGD"}. While the algorithm \code{method="optim"} typically 
+gives slightly more accurate results, the speed of the two algorithms differs 
 drastically:
 \itemize{
 \item The algorithm using \code{method="SGD"} is very fast, and can be used 

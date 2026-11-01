@@ -48,7 +48,7 @@ The shape matrix is defined as the sample variance matrix of a proportion
 \code{alpha} of the deepest (most central) OT qunatiles of \code{X}.
 The final matrix 
 is possibly scaled so that its determinant (if \code{scaling="determinant"})
-of trace (if \code{scaling="trace"}) equals \code{scale}.
+or trace (if \code{scaling="trace"}) equals \code{scale}.
 }
 \examples{
 n = 50

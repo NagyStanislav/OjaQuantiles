@@ -188,7 +188,8 @@ Rcpp::List OjaRankSGD(arma::mat mu, arma::mat X, int B, int batch,
 }
 
 // [[Rcpp::export]]
-arma::vec objfC(arma::mat mu, arma::mat X, arma::vec u, double alpha, int n, int d, int nmu){
+arma::vec objfC_old(arma::mat mu, arma::mat X, arma::vec u, double alpha, int n, int d, int nmu){
+  // deprecated version of objfC, works only in dimension d<=5
   // mu is a d-times-nmu matrix
   // X is a d-times-n matrix (!)
   // u is a d-vector
@@ -293,10 +294,76 @@ arma::vec objfC(arma::mat mu, arma::mat X, arma::vec u, double alpha, int n, int
   return(res);
 }
 
+
+
+// [[Rcpp::export]]
+arma::vec objfC(arma::mat mu, arma::mat X, arma::vec u, double alpha, int n, int d, int nmu) {
+  // mu is a d-times-nmu matrix
+  // X is a d-times-n matrix (!)
+  // u is a d-vector
+
+    arma::vec res(nmu, arma::fill::zeros);
+
+    if (d > n || d <= 0) {
+        return res;
+    }
+
+    // Sign multiplier for Wd0 based on dimension d: pow(-1, d + 2) is 1 if d is even, -1 if d is odd
+    double d_sign = ((d + 2) % 2 == 0) ? 1.0 : -1.0;
+
+    // Generate initial combination indices: {0, 1, ..., d-1}
+    std::vector<int> idx(d);
+    for (int i = 0; i < d; ++i) {
+        idx[i] = i;
+    }
+
+    bool has_next = true;
+
+    while (has_next) {
+        // Construct matrix X1 from selected columns of X
+        arma::mat X1(d, d);
+        for (int i = 0; i < d; ++i) {
+            X1.col(i) = X.col(idx[i]);
+        }
+
+        // Compute cvector and deterministic quantities
+        arma::vec cvec = cvectorC(X1, d);
+        double Wd0 = d_sign * arma::det(X1);
+        
+        // Invariant for all k: compute dot(u, cvec) sign once outside the k loop
+        double u_sign = signC(arma::dot(u, cvec));
+
+        // Outer loop over evaluation points
+        for (int k = 0; k < nmu; ++k) {
+            double Wd = Wd0 + arma::dot(mu.col(k), cvec);
+            double Wd_sign = signC(Wd);
+            res(k) += std::abs(Wd) * (1.0 - alpha * u_sign * Wd_sign);
+        }
+
+        // Advance to the next lexicographical combination (n choose d)
+        int p = d - 1;
+        while (p >= 0 && idx[p] == n - d + p) {
+            p--;
+        }
+
+        if (p < 0) {
+            has_next = false;
+        } else {
+            idx[p]++;
+            for (int i = p + 1; i < d; ++i) {
+                idx[i] = idx[p] + i - p;
+            }
+        }
+    }
+
+    return res;
+}
+
 // Oja outlyingness and signs
 
 // [[Rcpp::export]]
-Rcpp::List gfunC(arma::mat v, arma::mat X, arma::vec mu, int n, int d, int nv){
+Rcpp::List gfunC_old(arma::mat v, arma::mat X, arma::vec mu, int n, int d, int nv){
+  // deprecated version of gfunC, works only in dimension d<=5 
   // mu is a d-vector
   // X is a d-times-n matrix (!)
   // v is a nv-times-d matrix (!!)
@@ -375,7 +442,73 @@ Rcpp::List gfunC(arma::mat v, arma::mat X, arma::vec mu, int n, int d, int nv){
 }
 
 // [[Rcpp::export]]
-arma::vec gfunCLL(arma::mat v, arma::mat X, arma::mat mu, int B, int n, int d, int nv){
+Rcpp::List gfunC(arma::mat v, arma::mat X, arma::vec mu, int n, int d, int nv) {
+    // mu is a d-vector
+    // X is a d-times-n matrix
+    // v is an nv-times-d matrix
+
+    arma::vec num(d, arma::fill::zeros);
+    arma::vec den(nv, arma::fill::zeros);
+
+    if (d > n || d <= 0) {
+        return Rcpp::List::create(
+            Rcpp::Named("num") = num,
+            Rcpp::Named("den") = den
+        );
+    }
+
+    // Allocate X1 buffer once to avoid repeated reallocations
+    arma::mat X1(d, d);
+
+    // Initial combination indices: {0, 1, ..., d-1}
+    std::vector<int> idx(d);
+    for (int i = 0; i < d; ++i) {
+        idx[i] = i;
+    }
+
+    bool has_next = true;
+
+    while (has_next) {
+        // Construct matrix X1 from selected columns of X
+        for (int i = 0; i < d; ++i) {
+            X1.col(i) = X.col(idx[i]);
+        }
+
+        // Compute cvector and determinant
+        arma::vec cvec = cvectorC(X1, d);
+        double c0 = arma::det(X1);
+
+        // Accumulate numerator: num += signC(c0 + dot(mu, cvec)) * cvec
+        double s = signC(c0 + arma::dot(mu, cvec));
+        num += s * cvec;
+
+        // Accumulate denominator: den += abs(v * cvec)
+        den += arma::abs(v * cvec);
+
+        // Advance to next lexicographical combination of size d from n elements
+        int p = d - 1;
+        while (p >= 0 && idx[p] == n - d + p) {
+            p--;
+        }
+
+        if (p < 0) {
+            has_next = false;
+        } else {
+            idx[p]++;
+            for (int i = p + 1; i < d; ++i) {
+                idx[i] = idx[p] + i - p;
+            }
+        }
+    }
+
+    return Rcpp::List::create(
+        Rcpp::Named("num") = num,
+        Rcpp::Named("den") = den
+    );
+}
+
+// [[Rcpp::export]]
+Rcpp::List gfunCLL(arma::mat v, arma::mat X, arma::mat mu, int B, int n, int d, int nv){
   // approximation of gfunC based on B random replicates of indices from X
   // mu is a d-times-nv matrix
   // X is a d-times-n matrix (!)
@@ -401,7 +534,9 @@ arma::vec gfunCLL(arma::mat v, arma::mat X, arma::mat mu, int B, int n, int d, i
     }
   }
   for(int k=0; k<nv; k++) res(k) = ta(k)/tb(k);
-  return(res);
+  // Rcout << "tb:" << tb << std::endl;
+  // return(Rcpp::List::create(Rcpp::Named("g")=res,Rcpp::Named("denom")=tb));
+  return(Rcpp::List::create(Rcpp::Named("g")=res, Rcpp::Named("numerator")=ta/B, Rcpp::Named("denominator")=tb/B));
 }
 
 // Procedures for the computation of the spatial signs

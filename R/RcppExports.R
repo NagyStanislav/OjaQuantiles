@@ -21,8 +21,16 @@ OjaRankSGD <- function(mu, X, B, batch, gamma0, gammas, v0, n, d, nq, trck) {
     .Call(`_OjaQuantiles_OjaRankSGD`, mu, X, B, batch, gamma0, gammas, v0, n, d, nq, trck)
 }
 
+objfC_old <- function(mu, X, u, alpha, n, d, nmu) {
+    .Call(`_OjaQuantiles_objfC_old`, mu, X, u, alpha, n, d, nmu)
+}
+
 objfC <- function(mu, X, u, alpha, n, d, nmu) {
     .Call(`_OjaQuantiles_objfC`, mu, X, u, alpha, n, d, nmu)
+}
+
+gfunC_old <- function(v, X, mu, n, d, nv) {
+    .Call(`_OjaQuantiles_gfunC_old`, v, X, mu, n, d, nv)
 }
 
 gfunC <- function(v, X, mu, n, d, nv) {

@@ -1,6 +1,6 @@
 #### OjaQuantile ----
 #' Oja Quantile
-#'
+#' 
 #' Iterative computation of the Oja quantiles for multivariate data:
 #' \itemize{
 #' \item A stochastic gradient descent algorithm, and 
@@ -30,13 +30,13 @@
 #' \code{method="SGD"}.
 #' 
 #' @param averaging The averaging method used for the final estimates using the 
-#' stochastic gradient method. By default set to \code{averaging="all"}, meaning
-#' that the resulting estimate is a weighted average of all the \code{B} 
-#' updates. Other possible values are \code{averaging="suffix"}, where the 
-#' weighted average of only the last \code{B/4} updates is considered, or
+#' stochastic gradient method. By default set to \code{averaging="suffix"}, 
+#' meaning that the resulting estimate is a weighted average of the last 
+#' \code{B/4} updates. Other possible values are \code{averaging="all"}, where 
+#' the resulting estimate is a weighted average of all the \code{B} updates, or
 #' \code{averaging="none"}, where only the final \code{B}th update is taken, 
 #' without any averaging.
-#'  
+#' 
 #' @param B Number of iterations of the stochastic gradient descent method. A 
 #' positive integer. By default taken to be \code{B=1e4}.
 #' 
@@ -71,8 +71,9 @@
 #' whole history of \code{B} iterated solutions should be given. 
 #' By default set to \code{FALSE}.
 #' 
-#' @note The algorithm \code{method="optim"} typically gives more accurate 
-#' results. On the other hand, the speed of the two algorithms differs 
+#' @note In standard situations, one should use the default 
+#' \code{method="SGD"}. While the algorithm \code{method="optim"} typically 
+#' gives slightly more accurate results, the speed of the two algorithms differs 
 #' drastically:
 #' \itemize{
 #' \item The algorithm using \code{method="SGD"} is very fast, and can be used 
@@ -83,7 +84,7 @@
 #' which is of order \code{O(n^d)}. Thus, running with \code{method="optim"} and
 #' higher \code{d} or \code{n} is extremely slow. 
 #' }
-#'
+#' 
 #' @return A list with the following components:
 #' \itemize{
 #' \item \code{q}: A matrix of the approximate Oja quantiles of size 
@@ -140,7 +141,7 @@
 
 OjaQuantile = function(X, u, alpha, 
                        method="SGD",
-                       averaging="all",
+                       averaging="suffix",
                        B=1e4, 
                        whiten="cov",
                        batch=NULL, 
@@ -176,8 +177,9 @@ OjaQuantile = function(X, u, alpha,
   eS = eigen(S)
   Shi = eS$vectors%*%diag(eS$values^{-1/2})%*%t(eS$vectors)
   Sh = eS$vectors%*%diag(eS$values^{+1/2})%*%t(eS$vectors)
-  X0 = X       # store the original (un-whitenened) X in X0
-  X = X0%*%Shi # whitened X
+  # X0 = X       # store the original (un-whitenened) X in X0
+  X = X%*%Shi # whitened X
+  u = Shi%*%u # transformed u
   
   if(method=="SGD"){
     # initialize parameters gamma and x0
@@ -223,7 +225,7 @@ OjaQuantile = function(X, u, alpha,
   }
   if(method=="optim"){
     d = ncol(X)
-    if(d>5) stop("The exact computation works only in dimension d<=5.")
+    # if(d>5) stop("The exact computation works only in dimension d<=5.")
     res = matrix(nrow=nqs, ncol=d)
     for(i in 1:nqs){
       if(d>1) res[i,] = 
@@ -308,6 +310,9 @@ OjaQuantile = function(X, u, alpha,
 #' \item \code{outlyingness}: A numerical vector of the approximate Oja 
 #' outlyingness of each row of \code{mu} of length \code{nq}. One entry per 
 #' one row of \code{mu}.
+#' \item \code{intrinsic_outlyingness}: A numerical vector of the approximate 
+#' intrinsic Oja outlyingness of each row of \code{mu} of length \code{nq}. 
+#' One entry per one row of \code{mu}. Available only if \code{method="SGD"}.
 #' }
 #' The Oja ranks are obtained directly by multiplying \code{signs*outlyingness}.
 #'
@@ -351,16 +356,17 @@ OjaRank = function(mu, X, method="SGD",
   if((whiten=="var")|(whiten=="cov")){
     S = var(X)
   }
-  if(whiten=="none") S = diag(d)
-  #
-  eS = eigen(S)
-  Shi = eS$vectors%*%diag(eS$values^{-1/2})%*%t(eS$vectors)
-  Sh = eS$vectors%*%diag(eS$values^{+1/2})%*%t(eS$vectors)
-  X0 = X       # store the original (un-whitenened) X in X0
-  X = X0%*%Shi  # whitened X
   if((!is.matrix(mu))&(d==1)) mu = matrix(mu,ncol=1)
   if((!is.matrix(mu))&(d>1))  mu = matrix(mu,nrow=1)
-  mu = mu%*%Shi # whitened mu
+  if(whiten!="none"){
+    #
+    eS = eigen(S)
+    Shi = eS$vectors%*%diag(eS$values^{-1/2})%*%t(eS$vectors)
+    Sh = eS$vectors%*%diag(eS$values^{+1/2})%*%t(eS$vectors)
+    # X0 = X       # store the original (un-whitened) X in X0
+    X = X%*%Shi  # whitened X
+    mu = mu%*%Shi # whitened mu
+  }
   
   X = t(X)
   mu = t(mu)
@@ -380,14 +386,29 @@ OjaRank = function(mu, X, method="SGD",
     
     # Oja outlyingness
     if(B2>0){
-      resO = gfunCLL(resS$q, X, mu, B=B2, n, d, nv=ncol(resS$q))
-      resO = pmin(pmax(resO,0),1)
+      resOc = gfunCLL(resS$q, X, mu, B=B2, n, d, nv=ncol(resS$q))
+      resO = pmin(pmax(resOc$g,0),1) # outlyingness value
+      resI = resO/resOc$denominator # intrinsic outlyingness value
     }
-    if(B2==0) resO = rep(NA,nqs)
+    if(B2==0){
+      resO = rep(NA,nqs)
+      resI = rep(NA,nqs)
+    }
     
-    signs = t(resS$q)%*%Sh
-    signs = t(apply(signs, 1, function(x) x/c(sqrt(crossprod(x)))))
-    return(list(signs = signs, outlyingness = resO))
+    if(whiten!="none"){
+      # back-transform signs and intrinsic outlyingness
+      signs = t(resS$q)%*%Sh
+      snorms = apply(signs,1,function(x) sqrt(crossprod(x)))
+      # AS
+      # back-transformed S is AS/||AS||
+      resI = resI / c(det(Sh)) * snorms
+      # back-transformed N is N*||AS||/|A|
+      signs = signs/snorms # t(apply(signs, 1, function(x) x/c(sqrt(crossprod(x)))))
+      # renormalizing to AS/||AS||
+      } else signs = t(resS$q)
+    return(list(signs = signs, 
+                outlyingness = resO, 
+                intrinsic_outlyingness = resI))
   }
   
   if(method=="random"){
@@ -600,7 +621,7 @@ OjaQuantileObjective = function(mu, X, u, alpha){
     if(d==1) mu = matrix(mu,nrow=1)
   }
   if(nrow(mu)!=d) stop("Dimensions of mu and X do not coincide.")
-  if(d>5) stop("The exact computation works only in dimension d<=5.")  
+  # if(d>5) stop("The exact computation works only in dimension d<=5.")  
   return(objfC(mu, t(X), u, alpha, n, d, ncol(mu))/
            choose(n,d))
 }
@@ -609,7 +630,7 @@ OjaQuantileObjective = function(mu, X, u, alpha){
 #' Objective Function for the Oja Rank/Sign/Depth/Outlyingness
 #'
 #' The complete objective function to be minimized for computing the Oja 
-#' ranks/depht/outlyingness for multivariate data. 
+#' ranks/depth/outlyingness for multivariate data. 
 #'
 #' @param mu Argument at which the objective function is to be evaluated. 
 #' A numerical vector of dimension \code{d}.
@@ -667,7 +688,7 @@ OjaRankObjective = function(mu, X, eval=1001){
     if(d==1) mu = matrix(mu,nrow=1)
   }
   if(nrow(mu)!=d) stop("Dimensions of mu and X do not coincide.")
-  if(d>5) stop("The exact computation works only in dimension d<=5.")  
+  # if(d>5) stop("The exact computation works only in dimension d<=5.")  
   if(d==2){
     theta = seq(-pi,pi,length=eval)
     V = cbind(cos(theta),sin(theta))
@@ -687,7 +708,7 @@ OjaRankObjective = function(mu, X, eval=1001){
 }
 
 #### Objective function for spatial quantiles ----
-#' Objective Function for the spatial quantiles
+#' Objective Function for the Spatial Quantiles
 #'
 #' The complete objective function to be minimized for computing the spatial
 #' quantiles for multivariate data. 
@@ -740,9 +761,9 @@ objfSpatial = function(mu, X, u, alpha){
 }
 
 #### rankScatter ----
-#' An Oja/Tyler Scatter Estimator 
+#' Oja/Tyler Scatter Estimator 
 #'
-#' An estimator of the scatter matrix of a multivariate distributions based on 
+#' An estimator of the scatter matrix of a multivariate distribution based on 
 #' the ideas of Tyler (1987). Can be used in conjunction with the Oja signs 
 #' (\link{OjaRank}) giving an Oja scatter estimator, or with the spatial signs
 #' (\link{spatialRank}) giving the classical Tyler scatter estimator.
@@ -754,7 +775,7 @@ objfSpatial = function(mu, X, u, alpha){
 #' @param method Possible values are \code{"Oja"} for the Oja ranks, 
 #' \code{"Tyler"} or \code{"spatial"} for the Tyler shape matrix constructed
 #' using the spatial ranks, or \code{"var"}, or \code{"cov"} for the matrix
-#' based on the trival sign vectors given simply by unit directions from the
+#' based on the trivial sign vectors given simply by unit directions from the
 #' sample mean of \code{X} to all data points.
 #' 
 #' @param B Number of iterations of the stochastic gradient descent method
@@ -775,21 +796,13 @@ objfSpatial = function(mu, X, u, alpha){
 #' @param echo An indicator of whether a diagnostic message about the 
 #' convergence of the algorithm should be printed. By default 
 #' \code{TRUE}.
-#' 
-#' @details
-#' The shape matrix is defined as the weighted sample variance matrix of 
-#' \code{X}, where the weights attached to each row of \code{X} are 
-#' \code{(1-outl)^expn}.
-#' The final matrix is possibly scaled so that its determinant 
-#' (if \code{scaling="determinant"})
-#' of trace (if \code{scaling="trace"}) equals \code{scale}.  
 #'
 #' @return A list with the following components:
 #' \itemize{
-#' \item \code{location}: A vector of legnth \code{d} with the corresponding
+#' \item \code{location}: A vector of length \code{d} with the corresponding
 #' location estimator, given as either the Oja median (if \code{method="Oja"}),
 #' the spatial median (if \code{method="Tyler"} or \code{method="spatial"}), or
-#' the same mean of \code{X} (if \code{method="cov"} or \code{method="var"}).
+#' the sample mean of \code{X} (if \code{method="cov"} or \code{method="var"}).
 #' \item \code{scatter}: A \code{d}-times-\code{d} estimated scatter matrix.
 #' \item \code{Xwhiten}: Matrix \code{X} whitened by the resulting scatter
 #' estimator. The rows of this matrix correspond to the approximately isotropic
@@ -801,7 +814,7 @@ objfSpatial = function(mu, X, u, alpha){
 #' @references Tyler, D. E. (1987). A distribution-free M-estimator of 
 #' multivariate scatter. \emph{The Annals of Statistics}, 15, 234-251.
 #' 
-#' @references Taskinen, S., Frahm, G., Nordhausen, K., and Oja H. (2022). A 
+#' @references Taskinen, S., Frahm, G., Nordhausen, K., and Oja, H. (2022). A 
 #' review of Tyler's shape matrix and its extensions. \emph{Robust and 
 #' Multivariate Statistical Methods}, pp 23-41.
 #'
@@ -913,11 +926,11 @@ rankScatter = function(X,
 #' \code{(1-outl)^expn}.
 #' The final matrix is possibly scaled so that its determinant 
 #' (if \code{scaling="determinant"})
-#' of trace (if \code{scaling="trace"}) equals \code{scale}.  
+#' or trace (if \code{scaling="trace"}) equals \code{scale}.  
 #'
 #' @return A list with two components:
 #' \itemize{
-#' \item \code{location}: A vector of legnth \code{d} with the corresponding
+#' \item \code{location}: A vector of length \code{d} with the corresponding
 #' location estimator, given as the weighted sample mean, where the weights
 #' are the same as for obtaining the shape matrix estimator.
 #' \item \code{shape}: A \code{d}-times-\code{d} estimated shape matrix.
@@ -1007,14 +1020,14 @@ weightedShape = function(X, outl, expn = 1, scale = NULL,
 #' 
 #' @details
 #' The shape matrix is defined as the sample variance matrix of 
-#' \code{1-alpha}-proporition of rows of \code{X} with the lower outlyingness.
+#' \code{1-alpha}-proportion of rows of \code{X} with the lower outlyingness.
 #' The final matrix is possibly scaled so that its determinant 
 #' (if \code{scaling="determinant"})
-#' of trace (if \code{scaling="trace"}) equals \code{scale}.  
+#' or trace (if \code{scaling="trace"}) equals \code{scale}.  
 #'
 #' @return A list with two components:
 #' \itemize{
-#' \item \code{location}: A vector of legnth \code{d} with the corresponding
+#' \item \code{location}: A vector of length \code{d} with the corresponding
 #' location estimator, given as the sample mean of the observations considered
 #' in constructing the shape matrix estimator.
 #' \item \code{shape}: A \code{d}-times-\code{d} estimated shape matrix.
@@ -1109,11 +1122,11 @@ trimmedShape = function(X, outl, alpha = 1/2, scale = NULL,
 #' the vector \code{alpha}; at each level, \code{qs} quantiles are considered.
 #' In total, \code{length(alpha)*qs} quantiles are taken. The final matrix 
 #' is possibly scaled so that its determinant (if \code{scaling="determinant"})
-#' of trace (if \code{scaling="trace"}) equals \code{scale}.  
+#' or trace (if \code{scaling="trace"}) equals \code{scale}.  
 #'
 #' @return A list with two components:
 #' \itemize{
-#' \item \code{location}: A vector of legnth \code{d} with the corresponding
+#' \item \code{location}: A vector of length \code{d} with the corresponding
 #' (Oja/spatial) directional median.
 #' \item \code{shape}: A \code{d}-times-\code{d} estimated shape matrix.
 #' } 
@@ -1222,7 +1235,7 @@ quantileShape = function(X, alpha = 1/2,
 #' \code{alpha} of the deepest (most central) OT qunatiles of \code{X}.
 #' The final matrix 
 #' is possibly scaled so that its determinant (if \code{scaling="determinant"})
-#' of trace (if \code{scaling="trace"}) equals \code{scale}.  
+#' or trace (if \code{scaling="trace"}) equals \code{scale}.  
 #'
 #' @return A list with two components:
 #' \itemize{
@@ -1284,7 +1297,7 @@ OTShape = function(X, alpha = 1/2,  scale = NULL,
 #' @param Y An optional numerical matrix of the points where the optimal 
 #' transport depth with respect to \code{X} should be computed; a numerical 
 #' matrix of size \code{m}-times-\code{d}.
-#' @param n.S A positive integer giving that determines the size of the
+#' @param n.S A positive integer that determines the size of the
 #' grid in the unit ball. The parameter \code{n.S} specifies the number of 
 #' points on each quantile contour.  
 #' @param method Interpolation method used to establish the optimal transport
@@ -1298,6 +1311,11 @@ OTShape = function(X, alpha = 1/2,  scale = NULL,
 #' \link[transport]{transport}, default) or \code{"clue"} (function 
 #' \link[clue]{solve_LSAP}). The two methods should give the same results, but
 #' the default choice is usually faster.
+#' @param reference Reference distribution where the mass is transported. Can be 
+#' either \code{"sphere"} for the uniform spherical distribution (that is, 
+#' the product distribution of the uniform on the unit sphere and the uniform
+#' distribution on the interval \code{[0,1]}), or \code{"square"} for the
+#' uniform distribution on the hypercube \code{[0,1]^d}.
 #' @param fastint An integer indicator of the choice of an interpolation
 #' procedure. Possible choices are (a) \code{-1}, which enforces 
 #' \code{method="Tps"} for any sample size and dimension (this could be very 
@@ -1362,7 +1380,10 @@ OTShape = function(X, alpha = 1/2,  scale = NULL,
 depth.OT = function(X, Y=NULL, n.S = NULL, 
                     method="Tps", 
                     package="transport",
+                    reference="sphere",
                     fastint=NULL, k = 1){
+  
+  reference = match.arg(reference,c("sphere", "square"))
   
   sqdist <- function(a,b){
     return(abs(a - b)^2)
@@ -1374,27 +1395,33 @@ depth.OT = function(X, Y=NULL, n.S = NULL,
     (n.S = floor(1.3*n^{(d-1)/d})) # Hallin and Mordant (2023)
   }
   
-  if(n%/%n.S <= 1) n.S = floor(n.S/2) # sanity check for large d, low n
-  n.R = n%/%n.S
-  n0 = n%%n.S
+  if(reference=="sphere"){
+    if(n%/%n.S <= 1) n.S = floor(n.S/2) # sanity check for large d, low n
+    n.R = n%/%n.S
+    n0 = n%%n.S
   
-  rks = c(rep(1:n.R, each = n.S), rep(0,n0))
-  dirs = c(rep((1:(n.S)), n.R), rep(0,n0))
-  xs1 <- rep(1:n.R, each = n.S)/(n.R + 1)
-  xs2 <- rep((0:(n.S-1))/n.S, n.R)
+    rks = c(rep(1:n.R, each = n.S), rep(0,n0))
+    dirs = c(rep((1:(n.S)), n.R), rep(0,n0))
+    xs1 <- rep(1:n.R, each = n.S)/(n.R + 1)
+    xs2 <- rep((0:(n.S-1))/n.S, n.R)
   
-  if(d==2){
-    s1 <- c(xs1 * cos(2 * pi * xs2), rep(0,n0))
-    s2 <- c(xs1 * sin(2 * pi * xs2), rep(0,n0))
-    grid <- cbind(s1, s2)
+    if(d==2){
+      s1 <- c(xs1 * cos(2 * pi * xs2), rep(0,n0))
+      s2 <- c(xs1 * sin(2 * pi * xs2), rep(0,n0))
+      grid <- cbind(s1, s2)
+    }
+    
+    if(d>2){
+      u = randtoolbox::halton(n.S, dim=d) 
+      u = qnorm(u) # as in Hallin and Mordant (2023)
+      u = t(apply(u, 1, function(x) x/sqrt(c(crossprod(x)))))
+      xs2 = rep((1:(n.S)), n.R)
+      grid = rbind(xs1*u[xs2,], matrix(0, nrow=n0, ncol=d))
+    }
   }
   
-  if(d>2){
-    u = randtoolbox::halton(n.S, dim=d) 
-    u = qnorm(u) # as in Hallin and Mordant (2023)
-    u = t(apply(u, 1, function(x) x/sqrt(c(crossprod(x)))))
-    xs2 = rep((1:(n.S)), n.R)
-    grid = rbind(xs1*u[xs2,], matrix(0, nrow=n0, ncol=d))
+  if(reference=="square"){
+    grid = randtoolbox::halton(n, dim=d)   
   }
   
   if(package=="clue"){
@@ -1412,10 +1439,10 @@ depth.OT = function(X, Y=NULL, n.S = NULL,
   }
   
   FB <- grid[perm, ] 
-  RX = rks[perm]
-  DirX = dirs[perm]
-  
-  OTD = 1 - apply(FB, 1, crossprod) # depth of X wrt X
+  if(reference == "sphere"){
+    RX = rks[perm]
+    DirX = dirs[perm]
+    OTD = 1 - apply(FB, 1, crossprod) # depth of X wrt X
   
   if(!is.null(Y)){
     if(d>2) method="Tps"
@@ -1456,12 +1483,18 @@ depth.OT = function(X, Y=NULL, n.S = NULL,
       }
     }
   } else OTDY = NULL
+  } else { # if reference=="square"
+    RX = NULL
+    DirX = NULL
+    OTD = NULL
+    OTDY = NULL
+  }
   
-  return(list(RX = RX, DirX = DirX, depthX = OTD, depthY = OTDY))
+  return(list(RX = RX, DirX = DirX, depthX = OTD, depthY = OTDY, FB=FB))
 }
 
 #### in.poly ----
-#' Counting the number of points in a polygon 
+#' Counting the Number of Points in a Polygon 
 #'
 #' An auxiliary function that gives the number of points contained in a 
 #' (possibly non-convex) polygon in the plane.

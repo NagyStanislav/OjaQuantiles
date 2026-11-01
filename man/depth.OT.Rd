@@ -10,6 +10,7 @@ depth.OT(
   n.S = NULL,
   method = "Tps",
   package = "transport",
+  reference = "sphere",
   fastint = NULL,
   k = 1
 )
@@ -23,7 +24,7 @@ depth.OT(
 transport depth with respect to \code{X} should be computed; a numerical 
 matrix of size \code{m}-times-\code{d}.}
 
-\item{n.S}{A positive integer giving that determines the size of the
+\item{n.S}{A positive integer that determines the size of the
 grid in the unit ball. The parameter \code{n.S} specifies the number of 
 points on each quantile contour.}
 
@@ -39,6 +40,12 @@ Possible choices are \code{"transport"} (function
 \link[transport]{transport}, default) or \code{"clue"} (function 
 \link[clue]{solve_LSAP}). The two methods should give the same results, but
 the default choice is usually faster.}
+
+\item{reference}{Reference distribution where the mass is transported. Can be 
+either \code{"sphere"} for the uniform spherical distribution (that is, 
+the product distribution of the uniform on the unit sphere and the uniform
+distribution on the interval \code{[0,1]}), or \code{"square"} for the
+uniform distribution on the hypercube \code{[0,1]^d}.}
 
 \item{fastint}{An integer indicator of the choice of an interpolation
 procedure. Possible choices are (a) \code{-1}, which enforces 

@@ -39,7 +39,7 @@ matrix.}
 \value{
 A list with two components:
 \itemize{
-\item \code{location}: A vector of legnth \code{d} with the corresponding
+\item \code{location}: A vector of length \code{d} with the corresponding
 location estimator, given as the weighted sample mean, where the weights
 are the same as for obtaining the shape matrix estimator.
 \item \code{shape}: A \code{d}-times-\code{d} estimated shape matrix.
@@ -56,7 +56,7 @@ The shape matrix is defined as the weighted sample variance matrix of
 \code{(1-outl)^expn}.
 The final matrix is possibly scaled so that its determinant 
 (if \code{scaling="determinant"})
-of trace (if \code{scaling="trace"}) equals \code{scale}.
+or trace (if \code{scaling="trace"}) equals \code{scale}.
 }
 \examples{
 n = 50

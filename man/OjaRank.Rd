@@ -62,6 +62,9 @@ A list with the following components:
 \item \code{outlyingness}: A numerical vector of the approximate Oja 
 outlyingness of each row of \code{mu} of length \code{nq}. One entry per 
 one row of \code{mu}.
+\item \code{intrinsic_outlyingness}: A numerical vector of the approximate 
+intrinsic Oja outlyingness of each row of \code{mu} of length \code{nq}. 
+One entry per one row of \code{mu}. Available only if \code{method="SGD"}.
 }
 The Oja ranks are obtained directly by multiplying \code{signs*outlyingness}.
 }

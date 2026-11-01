@@ -2,7 +2,7 @@
 % Please edit documentation in R/code.R
 \name{in.poly}
 \alias{in.poly}
-\title{Counting the number of points in a polygon}
+\title{Counting the Number of Points in a Polygon}
 \usage{
 in.poly(poly, X)
 }
